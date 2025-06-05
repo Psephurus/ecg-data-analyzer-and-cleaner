@@ -25,8 +25,9 @@ def plot_ecg_with_peaks(time: np.ndarray, ecg: np.ndarray, r_peaks: np.ndarray, 
     print(f"[INFO] ECG plot with R peaks saved to: {output_path}")
     plt.close()
 
+
 def clean_rr_intervals(rr: np.ndarray, max_diff: float = 0.1,
-                       min_rr: float = 0.58, max_rr: float = 1.0) -> np.ndarray:
+                       min_rr: float = 0.0, max_rr: float = 1.0) -> np.ndarray:
     """清洗异常 R-R 间期（去除极端值及突变点）"""
     mask = (rr > min_rr) & (rr < max_rr)
     rr = rr[mask]
@@ -39,7 +40,6 @@ def clean_rr_intervals(rr: np.ndarray, max_diff: float = 0.1,
     rr_cleaned = rr[valid_indices]
     print(f"[INFO] Cleaned RR intervals based on ΔRR: {len(rr)} → {len(rr_cleaned)}")
     return rr_cleaned
-
 
 
 def plot_poincare(rr_intervals: np.ndarray, output_path: str):
@@ -71,21 +71,22 @@ def main():
     parser.add_argument("filepath", type=str, nargs="?", default="data/10 min.txt", help="Path to ECG txt file")
     parser.add_argument("--fs", type=int, default=500, help="Sampling rate (Hz)")
     parser.add_argument("--max-diff", type=float, default=0.3,
-                    help="Maximum allowed difference between adjacent RR intervals (in seconds)")
+                        help="Maximum allowed difference between adjacent RR intervals (in seconds)")
+    parser.add_argument("--min-rr", type=float, default=0.0, help="Minimum allowed RR interval (in seconds)")
     args = parser.parse_args()
 
     # === 输出路径设置 ===
     out_prefix = args.filepath.replace("/", "_").replace("\\", "_").replace(".txt", "").split("_")[-1]
     rr_csv_path = f"out/rr_intervals_{out_prefix}.csv"
-    ecg_plot_path = f"out/ecg_with_peaks_{out_prefix}.png"
+    # ecg_plot_path = f"out/ecg_with_peaks_{out_prefix}.png"
     poincare_plot_path = f"out/poincare_plot_{out_prefix}.png"
 
     # === 加载数据 ===
     print("[STEP] Loading ECG data...")
     df = load_ecg_data(args.filepath)
     ecg_raw = df["ADC"].values
-    total_samples = len(ecg_raw)
-    time_vector = np.linspace(0, total_samples / args.fs, total_samples)
+    # total_samples = len(ecg_raw)
+    # time_vector = np.arange(total_samples) / args.fs
 
     # === 滤波处理 ===
     print("[STEP] Filtering ECG signal...")
@@ -97,11 +98,11 @@ def main():
 
     # === 数据清洗 ===
     print("[STEP] Cleaning RR intervals...")
-    rr_cleaned = clean_rr_intervals(rr_intervals, max_diff=args.max_diff)
+    rr_cleaned = clean_rr_intervals(rr_intervals, max_diff=args.max_diff, min_rr=args.min_rr)
 
     # === 保存与可视化 ===
     save_rr_intervals(rr_cleaned, rr_csv_path)
-    plot_ecg_with_peaks(time_vector, ecg_filtered, r_peaks, ecg_plot_path)
+    # plot_ecg_with_peaks(time_vector, ecg_filtered, r_peaks, ecg_plot_path)
     plot_poincare(rr_cleaned, poincare_plot_path)
 
     print("[DONE] All tasks completed.")

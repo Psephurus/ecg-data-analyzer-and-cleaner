@@ -1,12 +1,13 @@
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 from data_loader import load_ecg_data
 
-def bandpass_filter(signal: np.ndarray, fs: float, lowcut: float = 1, highcut: float = 45.0, order: int = 4) -> np.ndarray:
+
+def bandpass_filter(signal: np.ndarray, fs: float, lowcut: float = 1, highcut: float = 45.0,
+                    order: int = 4) -> np.ndarray:
     """
-    对 ECG 信号进行带通滤波，默认频率范围为 0.5-45 Hz。
+    对 ECG 信号进行带通滤波，默认频率范围为 1-45 Hz。
 
     参数:
         signal (np.ndarray): 原始 ECG 信号
@@ -21,8 +22,9 @@ def bandpass_filter(signal: np.ndarray, fs: float, lowcut: float = 1, highcut: f
     nyq = 0.5 * fs
     low = lowcut / nyq
     high = highcut / nyq
-    b, a = butter(order, [low, high], btype='band') # type: ignore
+    b, a = butter(order, [low, high], btype='band')  # type: ignore
     return filtfilt(b, a, signal)
+
 
 if __name__ == "__main__":
     # === 参数设置 ===
@@ -32,7 +34,7 @@ if __name__ == "__main__":
     # === 读取数据 ===
     df = load_ecg_data(FILEPATH)
     adc = df["ADC"].values
-    time_segment = np.linspace(45, 60, int(FS * (60-45)))
+    time_segment = np.linspace(45, 60, int(FS * (60 - 45)))
     adc_segment = adc[:len(time_segment)]
 
     # === 滤波处理 ===

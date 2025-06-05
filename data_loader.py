@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 
+
 def load_ecg_data(filepath: str) -> pd.DataFrame:
     data = []
 
@@ -14,12 +15,10 @@ def load_ecg_data(filepath: str) -> pd.DataFrame:
                 hr_30s = int(match.group(4))
                 data.append((timestamp, adc, hr_4s, hr_30s))
 
-    columns = ["Time", "ADC", "HR_4s", "HR_30s"]
-    df = pd.DataFrame(data, columns=columns)
-    
-    df["rr_interval_from_hr4s"] = 60 / df["HR_4s"]
-    df["rr_interval_from_hr30s"] = 60 / df["HR_30s"]
-    return df
+    columns = ["Time", "ADC"]
+
+    return pd.DataFrame(data, columns=columns)
+
 
 if __name__ == "__main__":
     # 测试加载函数
