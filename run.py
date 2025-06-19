@@ -26,7 +26,7 @@ def plot_ecg_with_peaks(time: np.ndarray, ecg: np.ndarray, r_peaks: np.ndarray, 
     plt.close()
 
 
-def clean_rr_intervals(rr: np.ndarray, max_diff: float = 0.1,
+def clean_rr_intervals(rr: np.ndarray, max_diff: float = 1.0,
                        min_rr: float = 0.0, max_rr: float = 1.0) -> np.ndarray:
     """清洗异常 R-R 间期（去除极端值及突变点）"""
     mask = (rr > min_rr) & (rr < max_rr)
@@ -70,23 +70,24 @@ def main():
     parser = argparse.ArgumentParser(description="ECG R-peak detection and RR analysis")
     parser.add_argument("filepath", type=str, nargs="?", default="data/10 min.txt", help="Path to ECG txt file")
     parser.add_argument("--fs", type=int, default=500, help="Sampling rate (Hz)")
-    parser.add_argument("--max-diff", type=float, default=0.3,
+    parser.add_argument("--max-diff", type=float, default=1.0,
                         help="Maximum allowed difference between adjacent RR intervals (in seconds)")
     parser.add_argument("--min-rr", type=float, default=0.0, help="Minimum allowed RR interval (in seconds)")
+    parser.add_argument("--plot-ecg", action="store_true", help="Plot ECG with R peaks and save as image")  # 新增参数
     args = parser.parse_args()
 
     # === 输出路径设置 ===
     out_prefix = args.filepath.replace("/", "_").replace("\\", "_").replace(".txt", "").split("_")[-1]
     rr_csv_path = f"out/rr_intervals_{out_prefix}.csv"
-    # ecg_plot_path = f"out/ecg_with_peaks_{out_prefix}.png"
+    ecg_plot_path = f"out/ecg_with_peaks_{out_prefix}.png"
     poincare_plot_path = f"out/poincare_plot_{out_prefix}.png"
 
     # === 加载数据 ===
     print("[STEP] Loading ECG data...")
     df = load_ecg_data(args.filepath)
     ecg_raw = df["ADC"].values
-    # total_samples = len(ecg_raw)
-    # time_vector = np.arange(total_samples) / args.fs
+    total_samples = len(ecg_raw)
+    time_vector = np.arange(total_samples) / args.fs
 
     # === 滤波处理 ===
     print("[STEP] Filtering ECG signal...")
@@ -102,7 +103,8 @@ def main():
 
     # === 保存与可视化 ===
     save_rr_intervals(rr_cleaned, rr_csv_path)
-    # plot_ecg_with_peaks(time_vector, ecg_filtered, r_peaks, ecg_plot_path)
+    if args.plot_ecg:
+        plot_ecg_with_peaks(time_vector, ecg_filtered, r_peaks, ecg_plot_path)
     plot_poincare(rr_cleaned, poincare_plot_path)
 
     print("[DONE] All tasks completed.")

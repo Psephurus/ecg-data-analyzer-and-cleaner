@@ -11,9 +11,7 @@ def load_ecg_data(filepath: str) -> pd.DataFrame:
             if match:
                 timestamp = float(match.group(1))
                 adc = int(match.group(2))
-                hr_4s = int(match.group(3))
-                hr_30s = int(match.group(4))
-                data.append((timestamp, adc, hr_4s, hr_30s))
+                data.append((timestamp, adc))
 
     columns = ["Time", "ADC"]
 
