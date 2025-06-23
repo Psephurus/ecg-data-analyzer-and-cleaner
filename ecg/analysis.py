@@ -1,5 +1,6 @@
+import logging
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
 from scipy.signal import find_peaks
 
 
@@ -25,15 +26,47 @@ def detect_r_peaks(ecg_signal: np.ndarray, fs: float):
 
     # 计算 RR 间期（秒）
     rr_intervals = np.diff(peaks) / fs
+    logging.info(f"Detected {len(peaks)} R peaks")
     return rr_intervals, peaks
 
 
+def clean_rr_intervals(rr: np.ndarray, max_diff: float = 1.0,
+                       min_rr: float = 0.0, max_rr: float = 1.0) -> np.ndarray:
+    """清洗异常 R-R 间期（去除极端值及突变点）"""
+    mask = (rr > min_rr) & (rr < max_rr)
+    rr = rr[mask]
+    valid_indices = [0]  # 保留首个点
+
+    for i in range(1, len(rr)):
+        if abs(rr[i] - rr[valid_indices[-1]]) <= max_diff:
+            valid_indices.append(i)
+
+    rr_cleaned = rr[valid_indices]
+    logging.info(f"Cleaned RR intervals: {len(rr)} → {len(rr_cleaned)}")
+    return rr_cleaned
+
+
+def save_rr_intervals(rr_intervals: np.ndarray, filepath: str):
+    """保存 R-R 间期到 CSV 文件。"""
+    df_rr = pd.DataFrame({'RR_interval_s': rr_intervals})
+    df_rr.to_csv(filepath, index=False)
+    logging.info(f"R-R intervals saved to: {filepath}")
+
+
 if __name__ == "__main__":
-    from data_loader import load_ecg_data
-    from data_filtering import bandpass_filter
+    import matplotlib.pyplot as plt
+
+    from loader import load_ecg_data
+    from filters import bandpass_filter
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(asctime)s] %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
 
     # === 参数 ===
-    FILEPATH = "data/10 min.txt"
+    FILEPATH = "../data/20250604/dataLog-2025-6-2-12-31-6-1.5h.txt"
     FS = 500
 
     # === 读取与预处理 ===
@@ -54,7 +87,3 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.tight_layout()
     plt.show()
-
-    # === 打印结果 ===
-    print(f"R-R intervals (s): {np.round(rr_intervals, 3)}")
-    print(f"Number of R peaks: {len(r_peaks)}")

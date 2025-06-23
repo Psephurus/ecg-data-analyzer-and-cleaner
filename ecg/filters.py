@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
-from data_loader import load_ecg_data
 
 
 def bandpass_filter(signal: np.ndarray, fs: float, lowcut: float = 1, highcut: float = 45.0,
@@ -27,8 +26,9 @@ def bandpass_filter(signal: np.ndarray, fs: float, lowcut: float = 1, highcut: f
 
 
 if __name__ == "__main__":
+    from ecg.loader import load_ecg_data
     # === 参数设置 ===
-    FILEPATH = "data/10 min.txt"
+    FILEPATH = "../data/20250604/dataLog-2025-6-2-12-31-6-1.5h.txt"
     FS = 500  # 采样率 Hz（估算值）
 
     # === 读取数据 ===
