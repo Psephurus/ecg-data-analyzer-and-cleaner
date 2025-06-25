@@ -7,7 +7,7 @@ from ecg.pipeline import ECGProcessor
 
 def main():
     parser = argparse.ArgumentParser(description="ECG R-peak detection and RR analysis")
-    parser.add_argument("filepath", type=str, nargs="?", default="../data/20250521/10 min.txt",
+    parser.add_argument("filepath", type=str, nargs="?", default="./data/20250521/10 min.txt",
                         help="Path to ECG txt file")
     parser.add_argument("--config", type=str, default="config.yml",
                         help="Path to configuration file")

@@ -1,6 +1,0 @@
-fs: 500
-max_diff: 1.0
-min_rr: 0.0
-lowcut: 1.0
-highcut: 45.0
-order: 4
