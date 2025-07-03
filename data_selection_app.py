@@ -1,18 +1,18 @@
 import os
-import numpy as np
-import pandas as pd
 import tkinter as tk
-import matplotlib.pyplot as plt
 from tkinter import filedialog, messagebox, ttk
+
+import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from lasso_data_cleaner import LassoDataCleaner
+from lasso_selector import LassoDataCleaner
 
 
 class DataCleanerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("数据清洗工具")
+        self.root.title("数据精选工具")
         
         self.cleaner = None
         self.canvas = None
@@ -71,14 +71,40 @@ class DataCleanerApp:
         self.create_cleaner(x_data, y_data)
         self.status_var.set("已加载演示数据")
     
+    def read_csv_with_numpy(file_path):
+        """
+        使用 NumPy 读取 CSV 文件的前两列（x, y），可选第三列为标签
+        """
+        try:
+            # 尝试读取最多三列
+            data = np.genfromtxt(file_path, delimiter=',', skip_header=1, dtype=str)
+            if data.ndim == 1:
+                raise ValueError("CSV 文件内容格式有误，必须至少包含两列")
+
+            if data.shape[1] < 2:
+                raise ValueError("CSV 文件必须至少包含两列")
+
+            x_data = data[:, 0].astype(float)
+            y_data = data[:, 1].astype(float)
+
+            if data.shape[1] >= 3:
+                labels = data[:, 2].tolist()
+            else:
+                labels = [str(i) for i in range(len(x_data))]
+
+            return x_data, y_data, labels
+
+        except Exception as e:
+            raise ValueError(f"无法读取 CSV 文件: {e}")
+    
+    
     def load_data(self):
         """加载数据文件"""
         file_path = filedialog.askopenfilename(
             title="选择数据文件",
             filetypes=[
-                ("CSV files", "*.csv"),
-                ("Excel files", "*.xlsx"),
-                ("All files", "*.*")
+                ("逗号分隔值", "*.csv"),
+                ("所有文件", "*.*")
             ]
         )
         
@@ -86,34 +112,11 @@ class DataCleanerApp:
             return
         
         try:
-            if file_path.endswith('.csv'):
-                df = pd.read_csv(file_path)
-            elif file_path.endswith('.xlsx'):
-                df = pd.read_excel(file_path)
-            else:
-                messagebox.showerror("错误", "不支持的文件格式")
-                return
-            
-            # 假设前两列是 x, y 数据
-            if len(df.columns) < 2:
-                messagebox.showerror("错误", "数据文件至少需要两列")
-                return
-            
-            x_data = df.iloc[:, 0].values
-            y_data = df.iloc[:, 1].values
-            
-            # 检查数据是否为数值型
-            if not (np.issubdtype(x_data.dtype, np.number) and np.issubdtype(y_data.dtype, np.number)):
-                messagebox.showerror("错误", "前两列必须是数值型数据")
-                return
-            
-            labels = df.index.tolist() if len(df.columns) == 2 else df.iloc[:, 2].tolist()
-            
+            x_data, y_data, labels = read_csv_with_numpy(file_path)
             self.create_cleaner(x_data, y_data, labels)
             self.status_var.set(f"已加载数据文件: {os.path.basename(file_path)}")
-            
         except Exception as e:
-            messagebox.showerror("错误", f"加载数据失败: {str(e)}")
+            messagebox.showerror("错误", f"加载失败: {str(e)}")
     
     def create_cleaner(self, x_data, y_data, labels=None):
         """创建数据清洗器"""
@@ -171,9 +174,8 @@ class DataCleanerApp:
             title="保存清洗后的数据",
             defaultextension=".csv",
             filetypes=[
-                ("CSV files", "*.csv"),
-                ("Excel files", "*.xlsx"),
-                ("All files", "*.*")
+                ("逗号分隔值", "*.csv"),
+                ("所有文件", "*.*")
             ]
         )
         
@@ -181,26 +183,13 @@ class DataCleanerApp:
             return
         
         try:
-            if file_path.endswith('.csv'):
-                success = self.cleaner.save_data(file_path)
-            elif file_path.endswith('.xlsx'):
-                x, y, labels = self.cleaner.get_cleaned_data()
-                df = pd.DataFrame({
-                    'x': x,
-                    'y': y,
-                    'label': labels
-                })
-                df.to_excel(file_path, index=False)
-                success = True
-            else:
-                success = self.cleaner.save_data(file_path)
-            
-            if success:
-                messagebox.showinfo("成功", f"数据已保存到: {file_path}")
-                self.status_var.set(f"数据已保存到: {os.path.basename(file_path)}")
-            else:
-                messagebox.showerror("错误", "保存失败")
-                
+            x, y, labels = self.cleaner.get_cleaned_data()
+            arr = np.column_stack((x, y, labels))
+            header = "x,y,label"
+            np.savetxt(file_path, arr, delimiter=',', fmt='%s', header=header, comments='')
+
+            messagebox.showinfo("成功", f"数据已保存到: {file_path}")
+            self.status_var.set(f"数据已保存到: {os.path.basename(file_path)}")
         except Exception as e:
             messagebox.showerror("错误", f"保存失败: {str(e)}")
     
@@ -217,7 +206,7 @@ class DataCleanerApp:
 def main():
     """主函数"""
     root = tk.Tk()
-    app = DataCleanerApp(root)
+    DataCleanerApp(root)
     
     # 设置窗口关闭事件
     def on_closing():

@@ -1,7 +1,5 @@
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-
+import numpy as np
 from matplotlib.path import Path
 from matplotlib.widgets import LassoSelector
 
@@ -145,17 +143,3 @@ class LassoDataCleaner:
     def get_current_count(self):
         """获取当前数据点总数量"""
         return len(self.x_current)
-    
-    def save_data(self, filename):
-        """保存当前数据"""
-        try:
-            df = pd.DataFrame({
-                'x': self.x_current,
-                'y': self.y_current,
-                'label': self.current_labels
-            })
-            df.to_csv(filename, index=False)
-            return True
-        except Exception as e:
-            print(f"保存失败: {e}")
-            return False
